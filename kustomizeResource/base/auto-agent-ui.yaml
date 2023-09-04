@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auto-agent-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: auto-agent-ui
+  template:
+    metadata:
+      labels:
+        name: auto-agent-ui
+    spec:
+      containers:
+        - name: auto-agent-ui
+          image: docker-registry.netbase.com/auto-agent-ui
+          ports:
+            - containerPort: 3000
