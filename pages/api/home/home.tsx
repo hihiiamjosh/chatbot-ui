@@ -10,6 +10,7 @@ import { useCreateReducer } from '@/hooks/useCreateReducer';
 
 import useErrorService from '@/services/errorService';
 import useApiService from '@/services/useApiService';
+import useConversationService from '@/services/useConversationService';
 
 import {
   cleanConversationHistory,
@@ -90,6 +91,8 @@ const Home = ({
     },
     { enabled: true, refetchOnMount: false },
   );
+
+  const { putConversation } = useConversationService();
 
   useEffect(() => {
     if (data) dispatch({ field: 'models', value: data });
@@ -178,11 +181,11 @@ const Home = ({
 
   // CONVERSATION OPERATIONS  --------------------------------------------
 
-  const handleNewConversation = () => {
-    const lastConversation = conversations[conversations.length - 1];
-
+  const createNewConversation = async (lastConversation?: Conversation) => {
+    const conversationKey = uuidv4();
+    await putConversation(conversationKey);
     const newConversation: Conversation = {
-      id: uuidv4(),
+      id: conversationKey,
       name: t('New Conversation'),
       messages: [],
       model: lastConversation?.model || {
@@ -203,6 +206,12 @@ const Home = ({
 
     saveConversation(newConversation);
     saveConversations(updatedConversations);
+  };
+
+  const handleNewConversation = async () => {
+    const lastConversation = conversations[conversations.length - 1];
+
+    await createNewConversation(lastConversation);
 
     dispatch({ field: 'loading', value: false });
   };
@@ -327,18 +336,7 @@ const Home = ({
       });
     } else {
       const lastConversation = conversations[conversations.length - 1];
-      dispatch({
-        field: 'selectedConversation',
-        value: {
-          id: uuidv4(),
-          name: t('New Conversation'),
-          messages: [],
-          model: OpenAIModels[defaultModelId],
-          prompt: DEFAULT_SYSTEM_PROMPT,
-          temperature: lastConversation?.temperature ?? DEFAULT_TEMPERATURE,
-          folderId: null,
-        },
-      });
+      createNewConversation(lastConversation);
     }
   }, [
     defaultModelId,
