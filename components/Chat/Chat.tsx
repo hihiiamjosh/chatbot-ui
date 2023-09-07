@@ -12,6 +12,8 @@ import toast from 'react-hot-toast';
 
 import { useTranslation } from 'next-i18next';
 
+import useChatService, { ChatReply } from '@/services/useChatService';
+
 import { getEndpoint } from '@/utils/app/api';
 import {
   saveConversation,
@@ -29,10 +31,10 @@ import Spinner from '../Spinner';
 import { ChatInput } from './ChatInput';
 import { ChatLoader } from './ChatLoader';
 import { ErrorMessageDiv } from './ErrorMessageDiv';
+import { MemoizedChatMessage } from './MemoizedChatMessage';
 import { ModelSelect } from './ModelSelect';
 import { SystemPrompt } from './SystemPrompt';
 import { TemperatureSlider } from './Temperature';
-import { MemoizedChatMessage } from './MemoizedChatMessage';
 
 interface Props {
   stopConversationRef: MutableRefObject<boolean>;
@@ -64,185 +66,103 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
   const [showScrollDownButton, setShowScrollDownButton] =
     useState<boolean>(false);
 
+  const { chat } = useChatService();
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const isFirstMessage = (conversation: Conversation) =>
+    conversation.messages.length === 1;
+
+  const generateConversationName = (message: Message) => {
+    const { content } = message;
+    return content.length > 30 ? content.substring(0, 30) + '...' : content;
+  };
+
+  const updateConversationMessage = (
+    conversation: Conversation,
+    chatReply: ChatReply[],
+  ) => {
+    const updatedMessages: Message[] = [
+      ...conversation.messages,
+      ...chatReply.map(
+        ({ content }) => ({ role: 'assistant', content } as const),
+      ),
+    ];
+    const conversationWithChatReply = {
+      ...conversation,
+      messages: updatedMessages,
+    };
+    homeDispatch({
+      field: 'selectedConversation',
+      value: conversationWithChatReply,
+    });
+    saveConversation(conversationWithChatReply);
+    return conversationWithChatReply;
+  };
+
+  const updateConversations = (
+    conversations: Conversation[],
+    selectedConversation: Conversation,
+  ) => {
+    const updatedConversations: Conversation[] = conversations.map(
+      (conversation) => {
+        if (conversation.id === selectedConversation.id) {
+          return selectedConversation;
+        }
+        return conversation;
+      },
+    );
+    if (updatedConversations.length === 0) {
+      updatedConversations.push(selectedConversation);
+    }
+    homeDispatch({ field: 'conversations', value: updatedConversations });
+    saveConversations(updatedConversations);
+  };
+
   const handleSend = useCallback(
     async (message: Message, deleteCount = 0, plugin: Plugin | null = null) => {
-      if (selectedConversation) {
-        let updatedConversation: Conversation;
-        if (deleteCount) {
-          const updatedMessages = [...selectedConversation.messages];
-          for (let i = 0; i < deleteCount; i++) {
-            updatedMessages.pop();
-          }
-          updatedConversation = {
-            ...selectedConversation,
-            messages: [...updatedMessages, message],
-          };
-        } else {
-          updatedConversation = {
-            ...selectedConversation,
-            messages: [...selectedConversation.messages, message],
-          };
+      if (!selectedConversation) return;
+
+      let conversationWithUserMessage: Conversation;
+      if (deleteCount) {
+        const updatedMessages = [...selectedConversation.messages];
+        for (let i = 0; i < deleteCount; i++) {
+          updatedMessages.pop();
         }
-        homeDispatch({
-          field: 'selectedConversation',
-          value: updatedConversation,
-        });
-        homeDispatch({ field: 'loading', value: true });
-        homeDispatch({ field: 'messageIsStreaming', value: true });
-        const chatBody: ChatBody = {
-          model: updatedConversation.model,
-          messages: updatedConversation.messages,
-          key: apiKey,
-          prompt: updatedConversation.prompt,
-          temperature: updatedConversation.temperature,
+        conversationWithUserMessage = {
+          ...selectedConversation,
+          messages: [...updatedMessages, message],
         };
-        const endpoint = getEndpoint(plugin);
-        let body;
-        if (!plugin) {
-          body = JSON.stringify(chatBody);
-        } else {
-          body = JSON.stringify({
-            ...chatBody,
-            googleAPIKey: pluginKeys
-              .find((key) => key.pluginId === 'google-search')
-              ?.requiredKeys.find((key) => key.key === 'GOOGLE_API_KEY')?.value,
-            googleCSEId: pluginKeys
-              .find((key) => key.pluginId === 'google-search')
-              ?.requiredKeys.find((key) => key.key === 'GOOGLE_CSE_ID')?.value,
-          });
-        }
-        const controller = new AbortController();
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          signal: controller.signal,
-          body,
-        });
-        if (!response.ok) {
-          homeDispatch({ field: 'loading', value: false });
-          homeDispatch({ field: 'messageIsStreaming', value: false });
-          toast.error(response.statusText);
-          return;
-        }
-        const data = response.body;
-        if (!data) {
-          homeDispatch({ field: 'loading', value: false });
-          homeDispatch({ field: 'messageIsStreaming', value: false });
-          return;
-        }
-        if (!plugin) {
-          if (updatedConversation.messages.length === 1) {
-            const { content } = message;
-            const customName =
-              content.length > 30 ? content.substring(0, 30) + '...' : content;
-            updatedConversation = {
-              ...updatedConversation,
-              name: customName,
-            };
-          }
-          homeDispatch({ field: 'loading', value: false });
-          const reader = data.getReader();
-          const decoder = new TextDecoder();
-          let done = false;
-          let isFirst = true;
-          let text = '';
-          while (!done) {
-            if (stopConversationRef.current === true) {
-              controller.abort();
-              done = true;
-              break;
-            }
-            const { value, done: doneReading } = await reader.read();
-            done = doneReading;
-            const chunkValue = decoder.decode(value);
-            text += chunkValue;
-            if (isFirst) {
-              isFirst = false;
-              const updatedMessages: Message[] = [
-                ...updatedConversation.messages,
-                { role: 'assistant', content: chunkValue },
-              ];
-              updatedConversation = {
-                ...updatedConversation,
-                messages: updatedMessages,
-              };
-              homeDispatch({
-                field: 'selectedConversation',
-                value: updatedConversation,
-              });
-            } else {
-              const updatedMessages: Message[] =
-                updatedConversation.messages.map((message, index) => {
-                  if (index === updatedConversation.messages.length - 1) {
-                    return {
-                      ...message,
-                      content: text,
-                    };
-                  }
-                  return message;
-                });
-              updatedConversation = {
-                ...updatedConversation,
-                messages: updatedMessages,
-              };
-              homeDispatch({
-                field: 'selectedConversation',
-                value: updatedConversation,
-              });
-            }
-          }
-          saveConversation(updatedConversation);
-          const updatedConversations: Conversation[] = conversations.map(
-            (conversation) => {
-              if (conversation.id === selectedConversation.id) {
-                return updatedConversation;
-              }
-              return conversation;
-            },
-          );
-          if (updatedConversations.length === 0) {
-            updatedConversations.push(updatedConversation);
-          }
-          homeDispatch({ field: 'conversations', value: updatedConversations });
-          saveConversations(updatedConversations);
-          homeDispatch({ field: 'messageIsStreaming', value: false });
-        } else {
-          const { answer } = await response.json();
-          const updatedMessages: Message[] = [
-            ...updatedConversation.messages,
-            { role: 'assistant', content: answer },
-          ];
-          updatedConversation = {
-            ...updatedConversation,
-            messages: updatedMessages,
-          };
-          homeDispatch({
-            field: 'selectedConversation',
-            value: updateConversation,
-          });
-          saveConversation(updatedConversation);
-          const updatedConversations: Conversation[] = conversations.map(
-            (conversation) => {
-              if (conversation.id === selectedConversation.id) {
-                return updatedConversation;
-              }
-              return conversation;
-            },
-          );
-          if (updatedConversations.length === 0) {
-            updatedConversations.push(updatedConversation);
-          }
-          homeDispatch({ field: 'conversations', value: updatedConversations });
-          saveConversations(updatedConversations);
-          homeDispatch({ field: 'loading', value: false });
-          homeDispatch({ field: 'messageIsStreaming', value: false });
-        }
+      } else {
+        conversationWithUserMessage = {
+          ...selectedConversation,
+          messages: [...selectedConversation.messages, message],
+        };
+      }
+
+      if (isFirstMessage(conversationWithUserMessage)) {
+        conversationWithUserMessage = {
+          ...conversationWithUserMessage,
+          name: generateConversationName(message),
+        };
+      }
+
+      homeDispatch({
+        field: 'selectedConversation',
+        value: conversationWithUserMessage,
+      });
+
+      const chatReply = await chat(selectedConversation.id, message.content);
+      if (chatReply) {
+        const conversationWithChatReply = updateConversationMessage(
+          conversationWithUserMessage,
+          chatReply,
+        );
+        updateConversations(conversations, conversationWithChatReply);
+      } else {
+        //TODO: add some error message when no reply ?
       }
     },
     [
