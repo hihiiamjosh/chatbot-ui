@@ -25,18 +25,30 @@ const useApiService = () => {
   // 	[fetchService]
   // );
 
-  const getModels = useCallback(
-    (params: GetModelsRequestProps, signal?: AbortSignal) => {
-      return fetchService.post<GetModelsRequestProps>(`/api/models`, {
-        body: { key: params.key },
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        signal,
-      });
-    },
-    [fetchService],
-  );
+  const getModels = (params: GetModelsRequestProps, signal?: AbortSignal) => {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve([
+          {
+            id: 'gpt-3.5-turbo',
+            name: 'GPT-3.5',
+          },
+        ]);
+      }, 1000);
+    });
+  };
+  // const getModels = useCallback(
+  //   (params: GetModelsRequestProps, signal?: AbortSignal) => {
+  //     return fetchService.post<{ id: string; name: string }[]>(`/api/models`, {
+  //       body: { key: params.key },
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       signal,
+  //     });
+  //   },
+  //   [fetchService],
+  // );
 
   return {
     getModels,
