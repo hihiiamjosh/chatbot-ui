@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auto-agent-ui
+spec:
+  selector:
+    matchLabels:
+      name: dev-auto-agent-ui
+  template:
+    metadata:
+      labels:
+        name: dev-auto-agent-ui
