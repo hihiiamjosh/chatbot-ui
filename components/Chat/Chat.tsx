@@ -16,9 +16,10 @@ import useChatService, { ChatReply } from '@/services/useChatService';
 
 import { getEndpoint } from '@/utils/app/api';
 import {
-  saveConversation,
+  AddMessages,
   saveConversations,
-  updateConversation,
+  saveSelectedConversation,
+  updateConversations,
 } from '@/utils/app/conversation';
 import { throttle } from '@/utils/data/throttle';
 
@@ -80,47 +81,6 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
     return content.length > 30 ? content.substring(0, 30) + '...' : content;
   };
 
-  const updateConversationMessage = (
-    conversation: Conversation,
-    chatReply: ChatReply[],
-  ) => {
-    const updatedMessages: Message[] = [
-      ...conversation.messages,
-      ...chatReply.map(
-        ({ content }) => ({ role: 'assistant', content } as const),
-      ),
-    ];
-    const conversationWithChatReply = {
-      ...conversation,
-      messages: updatedMessages,
-    };
-    homeDispatch({
-      field: 'selectedConversation',
-      value: conversationWithChatReply,
-    });
-    saveConversation(conversationWithChatReply);
-    return conversationWithChatReply;
-  };
-
-  const updateConversations = (
-    conversations: Conversation[],
-    selectedConversation: Conversation,
-  ) => {
-    const updatedConversations: Conversation[] = conversations.map(
-      (conversation) => {
-        if (conversation.id === selectedConversation.id) {
-          return selectedConversation;
-        }
-        return conversation;
-      },
-    );
-    if (updatedConversations.length === 0) {
-      updatedConversations.push(selectedConversation);
-    }
-    homeDispatch({ field: 'conversations', value: updatedConversations });
-    saveConversations(updatedConversations);
-  };
-
   const handleSend = useCallback(
     async (message: Message, deleteCount = 0, plugin: Plugin | null = null) => {
       if (!selectedConversation) return;
@@ -156,11 +116,18 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
 
       const chatReply = await chat(selectedConversation.id, message.content);
       if (chatReply) {
-        const conversationWithChatReply = updateConversationMessage(
+        const conversationWithChatReply = AddMessages(
           conversationWithUserMessage,
           chatReply,
         );
-        updateConversations(conversations, conversationWithChatReply);
+        const { single, all } = updateConversations(
+          conversationWithChatReply,
+          conversations,
+        );
+        homeDispatch({ field: 'selectedConversation', value: single });
+        homeDispatch({ field: 'conversations', value: all });
+        saveSelectedConversation(single);
+        saveConversations(all);
       } else {
         //TODO: add some error message when no reply ?
       }

@@ -1,6 +1,8 @@
-import { Conversation } from '@/types/chat';
+import { ChatReply } from '@/services/useChatService';
 
-export const updateConversation = (
+import { Conversation, Message } from '@/types/chat';
+
+export const updateConversations = (
   updatedConversation: Conversation,
   allConversations: Conversation[],
 ) => {
@@ -12,8 +14,9 @@ export const updateConversation = (
     return c;
   });
 
-  saveConversation(updatedConversation);
-  saveConversations(updatedConversations);
+  if (updatedConversations.length === 0) {
+    updatedConversations.push(updatedConversation);
+  }
 
   return {
     single: updatedConversation,
@@ -21,7 +24,26 @@ export const updateConversation = (
   };
 };
 
-export const saveConversation = (conversation: Conversation) => {
+export const AddMessages = (
+  conversation: Conversation,
+  chatReply: ChatReply[],
+) => {
+  const updatedMessages: Message[] = [
+    ...conversation.messages,
+    ...chatReply.map(
+      ({ content }) => ({ role: 'assistant', content } as const),
+    ),
+  ];
+
+  const updatedConversation = {
+    ...conversation,
+    messages: updatedMessages,
+  };
+
+  return updatedConversation;
+};
+
+export const saveSelectedConversation = (conversation: Conversation) => {
   localStorage.setItem('selectedConversation', JSON.stringify(conversation));
 };
 

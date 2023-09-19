@@ -7,6 +7,7 @@ import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Head from 'next/head';
 
+import { useChatStream } from '@/hooks/useChatStream';
 import { useCreateReducer } from '@/hooks/useCreateReducer';
 
 import useErrorService from '@/services/errorService';
@@ -19,9 +20,10 @@ import {
 } from '@/utils/app/clean';
 import { DEFAULT_SYSTEM_PROMPT, DEFAULT_TEMPERATURE } from '@/utils/app/const';
 import {
-  saveConversation,
+  AddMessages,
   saveConversations,
-  updateConversation,
+  saveSelectedConversation,
+  updateConversations,
 } from '@/utils/app/conversation';
 import { saveFolders } from '@/utils/app/folders';
 import { savePrompts } from '@/utils/app/prompts';
@@ -111,7 +113,7 @@ const Home = ({
       value: conversation,
     });
 
-    saveConversation(conversation);
+    saveSelectedConversation(conversation);
   };
 
   // FOLDER OPERATIONS  --------------------------------------------
@@ -210,7 +212,7 @@ const Home = ({
     dispatch({ field: 'selectedConversation', value: newConversation });
     dispatch({ field: 'conversations', value: updatedConversations });
 
-    saveConversation(newConversation);
+    saveSelectedConversation(newConversation);
     saveConversations(updatedConversations);
   };
 
@@ -231,16 +233,34 @@ const Home = ({
       [data.key]: data.value,
     };
 
-    const { single, all } = updateConversation(
+    const { single, all } = updateConversations(
       updatedConversation,
       conversations,
     );
 
     dispatch({ field: 'selectedConversation', value: single });
     dispatch({ field: 'conversations', value: all });
+    saveSelectedConversation(single);
+    saveConversations(all);
   };
 
   // EFFECTS  --------------------------------------------
+  useChatStream((chatReply) => {
+    const { conversationKey } = chatReply;
+    const targetConversation = conversations.find(
+      (c) => c.id === conversationKey,
+    );
+    if (targetConversation) {
+      const updated = AddMessages(targetConversation, [chatReply]);
+      const { single, all } = updateConversations(updated, conversations);
+      if (selectedConversation?.id === targetConversation.id) {
+        dispatch({ field: 'selectedConversation', value: single });
+        saveSelectedConversation(single);
+      }
+      dispatch({ field: 'conversations', value: all });
+      saveConversations(all);
+    }
+  });
 
   useEffect(() => {
     if (window.innerWidth < 640) {

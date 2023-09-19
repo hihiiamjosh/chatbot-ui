@@ -263,6 +263,11 @@ export const ChatInput = ({
 
   useEffect(() => {
     textareaRef.current?.focus();
+    console.log(
+      '%c Line:267 🍣 selectedConversation',
+      'color:#2eafb0',
+      selectedConversation,
+    );
   }, [selectedConversation, textareaRef]);
 
   return (
