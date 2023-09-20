@@ -321,6 +321,7 @@ export const ChatInput = ({
           )} */}
 
           <textarea
+            disabled={!selectedConversation}
             ref={textareaRef}
             className="m-0 w-full resize-none border-0 bg-transparent p-0 py-2 pr-8 pl-4 text-black dark:bg-transparent dark:text-white md:py-3"
             style={{

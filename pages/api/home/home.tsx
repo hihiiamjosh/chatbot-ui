@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useQuery } from 'react-query';
 
 import { GetServerSideProps } from 'next';
@@ -183,7 +184,12 @@ const Home = ({
 
   const createNewConversation = async (lastConversation?: Conversation) => {
     const conversationKey = uuidv4();
-    await putConversation(conversationKey);
+    const result = await putConversation(conversationKey);
+    if (result?.error) {
+      toast.error('failed to create new conversation');
+      return;
+    }
+
     const newConversation: Conversation = {
       id: conversationKey,
       name: t('New Conversation'),
@@ -366,28 +372,26 @@ const Home = ({
         />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      {selectedConversation && (
-        <main
-          className={`flex h-screen w-screen flex-col text-sm text-white dark:text-white ${lightMode}`}
-        >
-          <div className="fixed top-0 w-full sm:hidden">
-            <Navbar
-              selectedConversation={selectedConversation}
-              onNewConversation={handleNewConversation}
-            />
+      <main
+        className={`flex h-screen w-screen flex-col text-sm text-white dark:text-white ${lightMode}`}
+      >
+        <div className="fixed top-0 w-full sm:hidden">
+          <Navbar
+            selectedConversation={selectedConversation}
+            onNewConversation={handleNewConversation}
+          />
+        </div>
+
+        <div className="flex h-full w-full pt-[48px] sm:pt-0">
+          <Chatbar />
+
+          <div className="flex flex-1">
+            <Chat stopConversationRef={stopConversationRef} />
           </div>
 
-          <div className="flex h-full w-full pt-[48px] sm:pt-0">
-            <Chatbar />
-
-            <div className="flex flex-1">
-              <Chat stopConversationRef={stopConversationRef} />
-            </div>
-
-            {/* <Promptbar /> */}
-          </div>
-        </main>
-      )}
+          {/* <Promptbar /> */}
+        </div>
+      </main>
     </HomeContext.Provider>
   );
 };
