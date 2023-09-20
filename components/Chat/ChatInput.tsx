@@ -137,37 +137,42 @@ export const ChatInput = ({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (showPromptList) {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setActivePromptIndex((prevIndex) =>
-          prevIndex < prompts.length - 1 ? prevIndex + 1 : prevIndex,
-        );
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setActivePromptIndex((prevIndex) =>
-          prevIndex > 0 ? prevIndex - 1 : prevIndex,
-        );
-      } else if (e.key === 'Tab') {
-        e.preventDefault();
-        setActivePromptIndex((prevIndex) =>
-          prevIndex < prompts.length - 1 ? prevIndex + 1 : 0,
-        );
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        handleInitModal();
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        setShowPromptList(false);
-      } else {
-        setActivePromptIndex(0);
-      }
-    } else if (e.key === 'Enter' && !isTyping && !isMobile() && !e.shiftKey) {
+    // if (showPromptList) {
+    //   if (e.key === 'ArrowDown') {
+    //     e.preventDefault();
+    //     setActivePromptIndex((prevIndex) =>
+    //       prevIndex < prompts.length - 1 ? prevIndex + 1 : prevIndex,
+    //     );
+    //   } else if (e.key === 'ArrowUp') {
+    //     e.preventDefault();
+    //     setActivePromptIndex((prevIndex) =>
+    //       prevIndex > 0 ? prevIndex - 1 : prevIndex,
+    //     );
+    //   } else if (e.key === 'Tab') {
+    //     e.preventDefault();
+    //     setActivePromptIndex((prevIndex) =>
+    //       prevIndex < prompts.length - 1 ? prevIndex + 1 : 0,
+    //     );
+    //   } else if (e.key === 'Enter') {
+    //     e.preventDefault();
+    //     handleInitModal();
+    //   } else if (e.key === 'Escape') {
+    //     e.preventDefault();
+    //     setShowPromptList(false);
+    //   } else {
+    //     setActivePromptIndex(0);
+    //   }
+    // } else if (e.key === 'Enter' && !isTyping && !isMobile() && !e.shiftKey) {
+    //   e.preventDefault();
+    //   handleSend();
+    // } else if (e.key === '/' && e.metaKey) {
+    //   e.preventDefault();
+    //   setShowPluginSelect(!showPluginSelect);
+    // }
+
+    if (e.key === 'Enter' && !isTyping && !isMobile() && !e.shiftKey) {
       e.preventDefault();
       handleSend();
-    } else if (e.key === '/' && e.metaKey) {
-      e.preventDefault();
-      setShowPluginSelect(!showPluginSelect);
     }
   };
 
@@ -280,15 +285,15 @@ export const ChatInput = ({
           )}
 
         <div className="relative mx-2 flex w-full flex-grow flex-col rounded-md border border-black/10 bg-white shadow-[0_0_10px_rgba(0,0,0,0.10)] dark:border-gray-900/50 dark:bg-[#40414F] dark:text-white dark:shadow-[0_0_15px_rgba(0,0,0,0.10)] sm:mx-4">
-          <button
+          {/* <button
             className="absolute left-2 top-2 rounded-sm p-1 text-neutral-800 opacity-60 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200"
             onClick={() => setShowPluginSelect(!showPluginSelect)}
             onKeyDown={(e) => {}}
           >
             {plugin ? <IconBrandGoogle size={20} /> : <IconBolt size={20} />}
-          </button>
+          </button> */}
 
-          {showPluginSelect && (
+          {/* {showPluginSelect && (
             <div className="absolute left-0 bottom-14 rounded bg-white dark:bg-[#343541]">
               <PluginSelect
                 plugin={plugin}
@@ -309,11 +314,11 @@ export const ChatInput = ({
                 }}
               />
             </div>
-          )}
+          )} */}
 
           <textarea
             ref={textareaRef}
-            className="m-0 w-full resize-none border-0 bg-transparent p-0 py-2 pr-8 pl-10 text-black dark:bg-transparent dark:text-white md:py-3 md:pl-10"
+            className="m-0 w-full resize-none border-0 bg-transparent p-0 py-2 pr-8 pl-4 text-black dark:bg-transparent dark:text-white md:py-3"
             style={{
               resize: 'none',
               bottom: `${textareaRef?.current?.scrollHeight}px`,
@@ -325,7 +330,8 @@ export const ChatInput = ({
               }`,
             }}
             placeholder={
-              t('Type a message or type "/" to select a prompt...') || ''
+              // t('Type a message or type "/" to select a prompt...') || ''
+              t('Send a message') || 'Send a message'
             }
             value={content}
             rows={1}
@@ -379,7 +385,7 @@ export const ChatInput = ({
           )}
         </div>
       </div>
-      <div className="px-3 pt-2 pb-3 text-center text-[12px] text-black/50 dark:text-white/50 md:px-4 md:pt-3 md:pb-6">
+      {/* <div className="px-3 pt-2 pb-3 text-center text-[12px] text-black/50 dark:text-white/50 md:px-4 md:pt-3 md:pb-6">
         <a
           href="https://github.com/mckaywrigley/chatbot-ui"
           target="_blank"
@@ -392,7 +398,7 @@ export const ChatInput = ({
         {t(
           "Chatbot UI is an advanced chatbot kit for OpenAI's chat models aiming to mimic ChatGPT's interface and functionality.",
         )}
-      </div>
+      </div> */}
     </div>
   );
 };

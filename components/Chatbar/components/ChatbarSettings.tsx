@@ -42,7 +42,7 @@ export const ChatbarSettings = () => {
         <ClearConversations onClearConversations={handleClearConversations} />
       ) : null}
 
-      <Import onImport={handleImportConversations} />
+      {/* <Import onImport={handleImportConversations} />
 
       <SidebarButton
         text={t('Export data')}
@@ -67,7 +67,7 @@ export const ChatbarSettings = () => {
         onClose={() => {
           setIsSettingDialog(false);
         }}
-      />
+      /> */}
     </div>
   );
 };
