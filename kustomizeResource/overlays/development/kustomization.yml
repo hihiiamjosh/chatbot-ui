@@ -11,6 +11,7 @@ namePrefix: dev-
 
 patches:
   - path: service.yaml
+  - path: service-internal.yaml
   - path: deployment.yaml
   - patch: |-
       - op: replace
