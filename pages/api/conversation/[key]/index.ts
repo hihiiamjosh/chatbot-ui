@@ -20,7 +20,7 @@ const AGENT_HOST = process.env.AGENT_HOST;
 
 const handlPut = async (req: NextApiRequest, res: NextApiResponse<any>) => {
   try {
-    const conversationKey = req.query?.key?.[0];
+    const conversationKey = req.query?.key as string | undefined;
     if (!conversationKey) {
       res.status(400).json(null);
       return;
