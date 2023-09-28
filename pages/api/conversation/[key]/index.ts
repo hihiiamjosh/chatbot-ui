@@ -17,6 +17,7 @@ export interface ChatContext {
 }
 
 const AGENT_HOST = process.env.AGENT_HOST;
+const ENDPOINT = `${AGENT_HOST}/conversation`;
 
 const handlPut = async (req: NextApiRequest, res: NextApiResponse<any>) => {
   try {
@@ -38,13 +39,16 @@ const handlPut = async (req: NextApiRequest, res: NextApiResponse<any>) => {
       },
     };
 
-    await fetch(`${AGENT_HOST}/putConversation`, {
+    console.log('%c Line:43 🍷 put conversation', 'color:#2eafb0', bodyObj);
+
+    const response = await fetch(`${ENDPOINT}/putConversation`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(bodyObj),
     });
+    console.log('%c Line:50 🧀 response', 'color:#7f2b82', response);
 
     res.status(200).json(null);
   } catch (error) {
@@ -54,20 +58,17 @@ const handlPut = async (req: NextApiRequest, res: NextApiResponse<any>) => {
 };
 
 const handleGet = async (req: NextApiRequest, res: NextApiResponse<any>) => {
-  const conversationKey = req.query?.key?.[0];
+  const conversationKey = req.query?.key;
   if (!conversationKey) {
     res.status(400).json(null);
     return;
   }
   try {
-    const agentResponse = await fetch(
-      `${AGENT_HOST}/conversation/${conversationKey}`,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+    const agentResponse = await fetch(`${ENDPOINT}/${conversationKey}`, {
+      headers: {
+        'Content-Type': 'application/json',
       },
-    );
+    });
     res.status(200).json(await agentResponse.json());
   } catch (error) {
     console.error(error);

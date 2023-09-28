@@ -20,11 +20,20 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse<any>) => {
         content: message,
       },
     };
-    const agentResponse = await fetch(`${AGENT_HOST}/consumeOpenAIMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(bodyObj),
+
+    console.log('%c Line:14 🍏 chat', 'color:#465975', {
+      url: `${AGENT_HOST}/conversation/consumeOpenAIMessage`,
+      bodyObj,
     });
+
+    const agentResponse = await fetch(
+      `${AGENT_HOST}/conversation/consumeOpenAIMessage`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyObj),
+      },
+    );
     res.status(200).json(await agentResponse.json());
   } catch (error) {
     console.error(error);

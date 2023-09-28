@@ -26,12 +26,16 @@ export const updateConversations = (
 
 export const AddMessages = (
   conversation: Conversation,
-  chatReply: ChatReply[],
+  chatReply: ChatReply[] | string[],
 ) => {
   const updatedMessages: Message[] = [
     ...conversation.messages,
     ...chatReply.map(
-      ({ content }) => ({ role: 'assistant', content } as const),
+      (reply) =>
+        ({
+          role: 'assistant',
+          content: typeof reply === 'string' ? reply : reply.content,
+        } as const),
     ),
   ];
 

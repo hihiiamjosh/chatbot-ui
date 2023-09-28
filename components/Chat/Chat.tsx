@@ -115,7 +115,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
       });
 
       const chatReply = await chat(selectedConversation.id, message.content);
-      if (chatReply) {
+      if (chatReply && chatReply.length > 0) {
         const conversationWithChatReply = AddMessages(
           conversationWithUserMessage,
           chatReply,
